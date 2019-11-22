@@ -8,19 +8,47 @@
   #https://bookdown.org/rdpeng/exdata/exploratory-data-analysis-checklist.html#read-in-your-data
   #https://www.r-bloggers.com/data-types-part-4-logical-class/
   #https://www.statmethods.net/input/missingdata.html
+  #https://stackoverflow.com/questions/36068963/r-how-to-split-a-data-frame-into-training-validation-and-test-sets
+  #https://machinelearningmastery.com/how-to-estimate-model-accuracy-in-r-using-the-caret-package/
 
+#install packages
+install.packages("readr")
+install.packages("tidyverse")
+install.packages("dplyr")
+install.packages("randomForest")
+install.packages("caret")
+install.packages("pROC")
+install.packages("klaR")
+install.packages("e1071")
+install.packages("mlbench")
+install.packages("glmnet")
+install.packages("ISLR")
+install.packages("tree")
 
 #load packages
-library("readr")
-library("tidyverse")
-library("dplyr")
-library("randomForest")
+library(readr)
+library(tidyverse)
+library(dplyr)
+library(randomForest)
+library(caret)
+library(pROC)
+library(klaR)
+library(e1071)
+library(mlbench)
+library(glmnet)
+library(ISLR)
+require(tree)
 
-#4. Import the "flattened" table (or CSV file) into your open source analytic environment of choice (R, Python, Java, etc.) and stage it for analysis.
+########################################################################################################
+########4. Import the "flattened" table (or CSV file) into your open source analytic environment of choice (R, Python, Java, etc.) and stage it for analysis.
+########################################################################################################
+
 mydata = read_csv("flattenedRecords.csv")  #read csv file 
 
-#5. Perform some simple exploratory analysis and generate summary statistics to get a sense of what is in the data.
-#df
+########################################################################################################
+########5. Perform some simple exploratory analysis and generate summary statistics to get a sense of what is in the data.
+########################################################################################################
+
 nrow(mydata) #number of rows
 ncol(mydata) #number of cloumns
 str(mydata) #information about the data
@@ -61,15 +89,15 @@ hist(mydata$over50K, col = "lightblue")
 class(mydata$maritalStatus)
   #if want to convert them back use as.numerical and as.character
     #origionally had them setting to new factors but it added 2x variables
-mydata$age<-as.factor(mydata$age)
-mydata$workClass<- as.factor(mydata$workClass)
-mydata$eduLevel<- as.factor(mydata$eduLevel)
-mydata$maritalStatus<-as.factor(mydata$maritalStatus)
-mydata$occupation<-as.factor(mydata$occupation)
-mydata$relationship<-as.factor(mydata$relationship)
-mydata$race<-as.factor(mydata$race)
-mydata$sex<- as.factor(mydata$sex)
-mydata$over50K<-as.factor(mydata$over50K)
+mydata$age<-factor(mydata$age)
+mydata$workClass<- factor(mydata$workClass)
+mydata$eduLevel<- factor(mydata$eduLevel)
+mydata$maritalStatus<- factor(mydata$maritalStatus)
+mydata$occupation<- factor(mydata$occupation)
+mydata$relationship<- factor(mydata$relationship)
+mydata$race<- factor(mydata$race)
+mydata$sex<- factor(mydata$sex)
+mydata$over50K<- factor(mydata$over50K)
 
 #check that it worked
 str(mydata)
@@ -87,23 +115,80 @@ nDoctorate =nrow(filter(mydata, eduLevel == "Doctorate"))
 nDoctorateOver50K =nrow(filter(mydata, over50K!=0 & eduLevel == "Doctorate"))
 percentOfDoctorateOver50 = (nDoctorateOver50K / nDoctorate) * 100
 
-
 #Correlation between over 50K and numerical variables
 cor.test(mydata$age, mydata$over50K, method = "pearson") #low
 cor.test(mydata$hoursPerWeek, mydata$over50K, method = "pearson") #low
 
+lm(formula = over50K ~ age, data = mydata)
+
 #clean the data by taking out outliers
 
-#6. Split the data into training, validation, and test data sets.
+########################################################################################################
+########6. Split the data into training, validation, and test data sets.
+########################################################################################################
+
 normalize <- function(x){
   + return( (x-min(x)) / (max(x)-min(x))) }
-normalize(c(1,2,3,4,5))
+normalize(c(1,2,5,11,12,13,15))
 
-mydata_train <- mydata[1:16280, ]
-mydata_validation <- mydata[16281:32560, ]
-mydata_test <- mydata[32560:48842, ]
+set.seed(111)
+# Set the fractions of the dataframe you want to split into training, validation, and test.
+fractionTraining   <- 0.60
+fractionValidation <- 0.20
+fractionTest       <- 0.20
 
-m1 <- knn(mydata_train,mydata_test,mydata_validation,100) #prediction for the classification of all the values in the test dataframe
-m1
-#7. Develop a model that predicts whether individuals, based on the census variables provided, make over $50,000/year. 
-    # Use over_50k as the target variable.
+# Compute sample sizes.
+mydata_train   <- floor(fractionTraining   * nrow(mydata))
+mydata_validation <- floor(fractionValidation * nrow(mydata))
+mydata_test       <- floor(fractionTest       * nrow(mydata))
+
+# Create the randomly-sampled indices for the dataframe. Use setdiff() to avoid overlapping subsets of indices.
+indicesTraining    <- sort(sample(seq_len(nrow(mydata)), size=mydata_train))
+indicesNotTraining <- setdiff(seq_len(nrow(mydata)), indicesTraining)
+indicesValidation  <- sort(sample(indicesNotTraining, size=mydata_validation))
+indicesTest        <- setdiff(indicesNotTraining, indicesValidation)
+
+# Finally, output the three dataframes for training, validation and test.
+dfTraining   <- mydata[indicesTraining, ]
+dfValidation <- mydata[indicesValidation, ]
+dfTest       <- mydata[indicesTest, ]
+
+########################################################################################################
+########7.Develop a model that predicts whether individuals, based on the census variables provided, make over $50,000/year. 
+        #Use over_50k as the target variable.
+########################################################################################################
+str(mydata)
+
+trainww <- mydata
+train$age <- NULL
+model<-tree(over50K~.,train)
+plot(model)
+
+#Repeated k-fold Cross Validation
+train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
+#model <- train(over50K~., data=dfTraining, trControl=train_control, method="nb")
+
+#Decision Tree
+mydata$age = as.numeric(mydata$age)
+train=sample(1:nrow(mydata),4000)
+mydata$age = as.numeric(mydata$age)
+treeT = tree(over50K~., mydata)
+
+tree.pred = predict(treeT, mydata[-train,], type="class")
+
+tree.pred
+with(mydata[-train,], table(tree.pred, High))
+
+#Logistic Regression
+logreg <- bayesglm(over50K ~ ., data = dfTraining, family = "binomial")
+p <- predict(logreg, dfValidation)
+
+#Random Forest
+
+#Niave Bayes
+niaveBayesModel <- NaiveBayes(over50K~., data=dfTraining)
+p <- predict(niaveBayesModel, dfValidation)
+
+#Confusion Matrix
+
+########8. Generate a chart that you feel conveys 1 or more important relationships in the data.
