@@ -69,6 +69,7 @@ unique(mydata$relationship)
 unique(mydata$race)
 unique(mydata$sex)
 unique(mydata$over50K)
+unique(mydata$country)
 
 #numerical summaries 
 summary(mydata$age)
@@ -153,44 +154,6 @@ indicesTest        <- setdiff(indicesNotTraining, indicesValidation)
 dfTraining   <- mydata[indicesTraining, ]
 dfValidation <- mydata[indicesValidation, ]
 dfTest       <- mydata[indicesTest, ]
-  #x and y test
 
-########################################################################################################
-########7.Develop a model that predicts whether individuals, based on the census variables provided, make over $50,000/year. 
-        #Use over_50k as the target variable.
-########################################################################################################
-# 
-# trainww <- mydata
-# train$age <- NULL
-# model<-tree(over50K~.,train)
-# plot(model)
-# 
-# #Repeated k-fold Cross Validation
-#   #helps to prevent from over fitting
-# #train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
-# #model <- train(over50K~., data=dfTraining, trControl=train_control, method="nb")
-# 
-# #Decision Tree
-# train = sample(1:nrow(mydata),4000)
-# 
-# mytree <- rpart(over50K~., data= dfTraining, method = "class")
-# treeT = tree(over50K~., mydata)
-# 
-# tree.pred = predict(mytree, dfValidation, type="class")
-# tree.pred
-# 
-# with(mydata[-train,], table(tree.pred, High))
-# 
-# #Logistic Regression
-# logreg <- bayesglm(over50K ~ ., data = dfTraining, family = "binomial")
-# p <- predict(logreg, dfValidation)
-# 
-# #Random Forest
-# 
-# #Niave Bayes
-# niaveBayesModel <- NaiveBayes(over50K~., data=dfTraining)
-# p <- predict(niaveBayesModel, dfValidation)
-# 
-# #Confusion Matrix
 
 ########8. Generate a chart that you feel conveys 1 or more important relationships in the data.
