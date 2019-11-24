@@ -101,7 +101,6 @@ mydata$relationship<- as.factor(mydata$relationship)
 mydata$race<- as.factor(mydata$race)
 mydata$sex<- as.factor(mydata$sex)
 mydata$country<- as.factor(mydata$country)
-#mydata$over50K<- as.factor(mydata$over50K)
 
 #check that it worked
 str(mydata)
@@ -124,6 +123,8 @@ cor.test(mydata$age, mydata$over50K, method = "pearson") #low
 cor.test(mydata$hoursPerWeek, mydata$over50K, method = "pearson") #low
 
 lm(formula = over50K ~ age, data = mydata)
+
+## go to test.ipynb file in repository for next steps
 
 ########################################################################################################
 ########6. Split the data into training, validation, and test data sets.
@@ -154,6 +155,3 @@ indicesTest        <- setdiff(indicesNotTraining, indicesValidation)
 dfTraining   <- mydata[indicesTraining, ]
 dfValidation <- mydata[indicesValidation, ]
 dfTest       <- mydata[indicesTest, ]
-
-
-########8. Generate a chart that you feel conveys 1 or more important relationships in the data.
